@@ -1,6 +1,12 @@
 # open-jam
 An app made to help with ear training and instrument/vocal practice. 
 
+# Primary Focus
+I care more about the backend right now than any UI stuff  
+If you don't wanna look at a command line interface feel free to fork and do 
+whatever you want to make it pretty
+
+
 This is a prototype
 - Do not expect cross platform compatibility
 - Do expect bugs
