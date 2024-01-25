@@ -6,6 +6,17 @@ I care more about the backend right now than any UI stuff
 If you don't wanna look at a command line interface feel free to fork and do 
 whatever you want to make it pretty
 
+# High level features
+1. Metronome
+    - Input patterns where it cuts out
+2. Tuner
+    - Later this will be used for long tone things
+3. Tone analyzer
+4. Volume checker
+5. Call and repeat generator
+6. Sight reading generator (probably needs AI...)
+
+
 
 This is a prototype
 - Do not expect cross platform compatibility
