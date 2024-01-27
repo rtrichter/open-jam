@@ -11,12 +11,14 @@ CHUNK_PER_FFT = 10
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
-RECORD_SECONDS = 20
+RECORD_SECONDS = 10
 
-filename = "out/1.wav"
+filename = "out/2.wav"
+
 
 def time_vec_from_sig(sig, sample_rate=RATE):
     return np.linspace(0, sig.size/sample_rate, sig.size)
+
 
 @dataclass
 class FFT_Data:
@@ -58,18 +60,6 @@ def get_fft(sig, time_vec):
     # return the things
     return FFT_Data(amplitude, power, angle, sample_freq, amp_freq[0], amp_position, peak_frequency)
 
-p = pyaudio.PyAudio()
-
-stream = p.open(format=FORMAT,
-                channels=CHANNELS,
-                rate=RATE,
-                input=True,
-                frames_per_buffer=CHUNK)
-
-print("* recording")
-
-frames = []
-
 
 # def live_fft():
 #     fig = plt.figure()
@@ -86,13 +76,23 @@ frames = []
 #             ys.append(fft.peak)
 #         ax1.clear()
 #         ax1.plot(xs, ys)
-    
+
 #     ani = animation.FuncAnimation(fig, animate, interval=93)
 #     plt.show()
 
+
 def live_fft():
-    # must be recording FIRST (using stream name)
-    # this should be refactored to not rely on outside variables asap
+    p = pyaudio.PyAudio()
+
+    stream = p.open(format=FORMAT,
+                    channels=CHANNELS,
+                    rate=RATE,
+                    input=True,
+                    frames_per_buffer=CHUNK)
+
+    print("* recording")
+
+    frames = []
     print("live ffting")
     plt.ion() 
     fig = plt.figure()
@@ -106,11 +106,11 @@ def live_fft():
     fft = get_fft(sig, time_vec_from_sig(sig))
     line1, = ax.plot(fft.sample_freq, fft.amplitude, 'r-')
     ax.set(xlim=(0, 1000), ylim=(0, 10**8))
-    
-        
-    # for i in range(0, int(RATE / CHUNK * RECORD_SECONDS - 1)):
-    while True:
+
+    for i in range(0, int(RATE / CHUNK * RECORD_SECONDS - 1)):
+    #while True:
         data = stream.read(CHUNK)
+        frames.append(data)
         array = np.frombuffer(data, dtype=np.int16)
         q.append(array)
         while len(q) > CHUNK_PER_FFT:
@@ -121,6 +121,19 @@ def live_fft():
         line1.set_ydata(fft.amplitude)
         fig.canvas.draw()
         fig.canvas.flush_events()
+
+    print("* done recording")
+
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+    wf = wave.open(filename, 'wb')
+    wf.setnchannels(CHANNELS)
+    wf.setsampwidth(p.get_sample_size(FORMAT))
+    wf.setframerate(RATE)
+    wf.writeframes(b''.join(frames))
+    wf.close()
 
 live_fft()
     
@@ -134,15 +147,3 @@ live_fft()
 #     plt.show()
 #     frames.append(data)
 
-print("* done recording")
-
-stream.stop_stream()
-stream.close()
-p.terminate()
-
-wf = wave.open(filename, 'wb')
-wf.setnchannels(CHANNELS)
-wf.setsampwidth(p.get_sample_size(FORMAT))
-wf.setframerate(RATE)
-wf.writeframes(b''.join(frames))
-wf.close()
