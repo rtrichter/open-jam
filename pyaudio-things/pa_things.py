@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from collections import deque
 
 CHUNK = 1024
-CHUNK_PER_FFT = 15
+CHUNK_PER_FFT = 10
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
@@ -91,6 +91,8 @@ frames = []
 #     plt.show()
 
 def live_fft():
+    # must be recording FIRST (using stream name)
+    # this should be refactored to not rely on outside variables asap
     print("live ffting")
     plt.ion() 
     fig = plt.figure()
@@ -106,7 +108,8 @@ def live_fft():
     ax.set(xlim=(0, 1000), ylim=(0, 10**8))
     
         
-    for i in range(0, int(RATE / CHUNK * RECORD_SECONDS - 1)):
+    # for i in range(0, int(RATE / CHUNK * RECORD_SECONDS - 1)):
+    while True:
         data = stream.read(CHUNK)
         array = np.frombuffer(data, dtype=np.int16)
         q.append(array)
