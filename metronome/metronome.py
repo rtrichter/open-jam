@@ -17,7 +17,7 @@ class Metronome:
     def __init__(self, sound=G.DEFAULT_SOUND, tempo=G.DEFAULT_TEMPO, signature=G.DEFAULT_SIGNATURE, mute_func=lambda: False):
         self.__sound = sound
         self.tempo = tempo
-        self.signature = signaturne
+        self.signature = signature
         self.__wave = sa.WaveObject.from_wave_file(sound)
         self.__thread = Thread(target=self._click_thread_func)
         self.__mute = False
@@ -85,11 +85,10 @@ if __name__ == "__main__":
     metro = Metronome(tempo=tempo, signature=sig, mute_func=mute_every_other_bar) 
     print(f"T={metro.click_period_frac}")
     metro.start()
-    # time.sleep(0.01)
-    # time.sleep(1)
-    # metro.mute()
-    # time.sleep(1)
-    # metro.unmute()
-    # time.sleep(1)
-    time.sleep(20)
+    time.sleep(0.01)
+    time.sleep(1)
+    metro.mute()
+    time.sleep(1)
+    metro.unmute()
+    time.sleep(1)
     metro.stop()
