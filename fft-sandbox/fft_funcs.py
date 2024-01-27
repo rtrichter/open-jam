@@ -5,12 +5,14 @@ import matplotlib.pyplot as plt
 import simpleaudio as sa
 from dataclasses import dataclass
 from random import randint
+from scipy import signal
+import time
 
 SAMPLE_RATE = 44100
 
 
 
-def get_wave(freq, amp, time_vec=None):
+def get_wave(freq, amp, time_vec=None, noise_weight=0, func=np.sin, angle=0):
     if time_vec is None:
         time_vec = np.linspace(0, 10, num=SAMPLE_RATE*10)
     # amp is scaling the sine wave amplitude
@@ -18,7 +20,7 @@ def get_wave(freq, amp, time_vec=None):
     # freq is scaling the frequency
     # 2*np.pi*time_vec allows us to use Hz as frequency inputs 
     # 1Hz * 2pi * 1s -> takes 1 second for 1 cycle = 1Hz wave
-    return amp*np.sin(freq*2*np.pi*time_vec)
+    return amp*(func(angle + freq*2*np.pi*time_vec) + noise_weight*np.random.randn(time_vec.size))
 
 # this is was stupid and unecessary... don't keep it later
 @dataclass
@@ -69,7 +71,7 @@ def show_fft(sig, time_vec):
     plt.plot(data.sample_freq, data.amp_freq)
     plt.show()
     
-def get_time_vec(duration_s):
+def get_time_vec(duration_s, random_offset=False):
     # take a space of time from 0 to duration_s
     # split it into SAMPLE_RATE*duration_s equal parts
     # this gives you evenly spaced time values to use later
@@ -77,7 +79,8 @@ def get_time_vec(duration_s):
     # imagine sample rate of 2 and duration 4 (num=9)
     # this seems weird but 0 and 4 are both included in the linspace so there are 
     # 9 even elements in the 0 to 4 range
-    return np.linspace(0, duration_s, num=SAMPLE_RATE*duration_s+1)
+    offset = randint(0, SAMPLE_RATE) * random_offset
+    return np.linspace(0+offset, duration_s+offset, num=SAMPLE_RATE*duration_s+1)
 
 def get_processed_sig(sig):
     # use this when generating signals with numpy (get_wave(...), time_vec, etc)
@@ -145,3 +148,59 @@ def simulate_fan_sound(duration_s):
 # simulate_fan_sound(2)
 
 # show_fan_sound_fft()
+
+
+def show_fft_from_file(filename):
+    sig = wav_to_array(filename)
+    time_vec = time_vec_from_sig(sig)
+    show_fft(sig, time_vec)
+
+# show_fft_from_file("audio/ahhh.wav")
+
+def triangle_wave(x):
+    return np.abs(signal.sawtooth(x))
+    
+
+def recreate_file_waveform(filename, n_peaks, duration):
+    sig = wav_to_array(filename)
+    time_vec = time_vec_from_sig(sig)
+    data : FFT_Data = get_fft(sig, time_vec)
+    peaks = set()
+    peak_indices = []
+    for i in range(n_peaks):
+        highest = (0, 0)
+        highest_index = 0
+        for j in range(len(data.amplitude)):
+            if data.amplitude[j] > highest[1]:
+                new = (data.sample_freq[j], data.amplitude[j])
+                if new in peaks:
+                    continue
+                highest = new
+                highest_index = j
+        if highest == (0, 0):
+            break
+        peaks.add(highest)
+        peak_indices.append(highest_index)
+        
+
+
+    time_vec = get_time_vec(duration)
+    waves = []
+    for i in peak_indices:
+        waves.append(get_wave(data.sample_freq[i], 
+                              data.amplitude[i], 
+                              get_time_vec(duration, True), 
+                              func=np.sin,
+                              angle=data.angle[i]))
+    processed = get_processed_sig(sum(waves))
+    return processed
+    
+def time_of_fft(filename):
+    sig = wav_to_array(filename)
+    tv = time_vec_from_sig(sig)
+    print("sample length: " + tv.size/SAMPLE_RATE)
+    t1 = time.perf_counter()
+    get_fft(sig, tv)
+    t2 = time.perf_counter()
+    print(f"time: {t2-t1}\tfreq: {1/(t2-t1)}")
+
