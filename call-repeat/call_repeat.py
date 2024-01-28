@@ -70,6 +70,15 @@ def get_playable_note(frequency, duration):
     duration_ms = int(duration * 1000)
     time_vec = np.linspace(0, duration_ms, num=(RATE//1000)*duration_ms+1) / 1000
     sig = np.sin(frequency * 2*np.pi*time_vec)
+    # clean up beginning and end
+    transition = 0.05
+    ends = int(RATE*transition)
+    print(RATE*transition)
+    for i in range(ends):
+        sig[-i] *= i/ends
+        sig[i] *= i/ends
+
+        
     sig = sig.astype(np.float32)
     output_bytes = (VOLUME * sig).tobytes()
     return output_bytes
@@ -96,9 +105,9 @@ def play_intervals(intervals, start, duration, separation):
         
 
 
-intervals = get_interval_sequence(10)
+intervals = get_interval_sequence(10, True)
 print(intervals)
 semi = [interval_to_semitones(interval) for interval in intervals]
 print(semi)
-play_intervals(semi, 440, 0.25, 0.05)
+play_intervals(semi, 440, 0.25, 0.00)
 
