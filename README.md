@@ -26,3 +26,6 @@ This is a prototype
 - Do not expect me to fix every problem you find
 - Do expect bugs to persist through the entire prototype (they'll be fixed in a full release)
 - Do not expect me to list anything else...
+
+
+# There is no license currently but probably will be soon
