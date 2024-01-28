@@ -105,7 +105,7 @@ def live_fft():
     sig = np.concatenate([*q])
     fft = get_fft(sig, time_vec_from_sig(sig))
     line1, = ax.plot(fft.sample_freq, fft.amplitude, 'r-')
-    ax.set(xlim=(0, 1000), ylim=(0, 10**8))
+    ax.set(xlim=(50, 4000), ylim=(0, 10**8))
 
     for i in range(0, int(RATE / CHUNK * RECORD_SECONDS - 1)):
     #while True:
