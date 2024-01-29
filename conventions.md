@@ -20,3 +20,4 @@ if units are ever confusing make note of them in the code and add a comment `#UN
 | seconds | s |
 | samples | smp |
 | Hertz | Hz |
+| radians | rad |
