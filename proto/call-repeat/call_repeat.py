@@ -70,6 +70,9 @@ def get_playable_note(frequency, duration):
     duration_ms = int(duration * 1000)
     time_vec = np.linspace(0, duration_ms, num=(RATE//1000)*duration_ms+1) / 1000
     sig = np.sin(frequency * 2*np.pi*time_vec)
+    sig = sig.astype(np.float32)
+
+    # START apply_volume_profile
     # clean up beginning and end
     transition = 0.05
     ends = int(RATE*transition)
@@ -77,9 +80,9 @@ def get_playable_note(frequency, duration):
     for i in range(ends):
         sig[-i] *= i/ends
         sig[i] *= i/ends
+    # END apply_volume_profile
 
         
-    sig = sig.astype(np.float32)
     output_bytes = (VOLUME * sig).tobytes()
     return output_bytes
 
