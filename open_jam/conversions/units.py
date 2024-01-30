@@ -1,4 +1,4 @@
-import config
+from open_jam import config
 
 def sec2sample(seconds: int) -> int:
     # forces to int since you can't have a partial sample
