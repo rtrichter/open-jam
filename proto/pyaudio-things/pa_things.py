@@ -5,15 +5,17 @@ import numpy as np
 from scipy import fftpack
 import matplotlib.pyplot as plt
 from collections import deque
+import time
 
 CHUNK = 1024
 CHUNK_PER_FFT = 10
-FORMAT = pyaudio.paInt16
+FORMAT = pyaudio.paFloat32
 CHANNELS = 1
 RATE = 44100
-RECORD_SECONDS = 10
+RECORD_SECONDS = 0.5
 
-filename = "out/2.wav"
+filename = "proto/pyaudio-things/out/2.wav"
+filename2 = "proto/pyaudio-things/out/re2.wav"
 
 
 def time_vec_from_sig(sig, sample_rate=RATE):
@@ -106,6 +108,7 @@ def live_fft():
     fft = get_fft(sig, time_vec_from_sig(sig))
     line1, = ax.plot(fft.sample_freq, fft.amplitude, 'r-')
     ax.set(xlim=(50, 4000), ylim=(0, 10**8))
+    ffts = []
 
     for i in range(0, int(RATE / CHUNK * RECORD_SECONDS - 1)):
     #while True:
@@ -117,6 +120,7 @@ def live_fft():
             q.popleft()
         sig = np.concatenate([*q])
         fft = get_fft(sig, time_vec_from_sig(sig))
+        ffts.append((fft.sample_freq, fft.amp_freq))
         ax.set(ylim=(0, max(fft.amplitude)))
         line1.set_ydata(fft.amplitude)
         fig.canvas.draw()
@@ -134,8 +138,84 @@ def live_fft():
     wf.setframerate(RATE)
     wf.writeframes(b''.join(frames))
     wf.close()
+    return ffts
 
-live_fft()
+ffts = live_fft()
+
+def recreate(ffts, n_peaks):
+    plt.ion() 
+    fig = plt.figure()
+    ax = fig.add_subplot(111)  
+    ax.set(xlim=(0, 1024), ylim=(0, 10**8))
+    p = pyaudio.PyAudio()
+    stream = p.open(
+        rate=RATE, 
+        channels=1, 
+        format=FORMAT, 
+        output=True, 
+        frames_per_buffer=CHUNK)
+    # generate sigform
+    # each chunk has a numpy array for that chunk
+    chunks = []
+
+    time_vec = np.linspace(0, 1024, num=1024)
+    line1, = ax.plot(time_vec, np.sin(2*np.pi*time_vec), 'r-')
+    print(time_vec)
+    print(time_vec.size)
+    for i in range(len(ffts)): # i = nu
+        print(f"starting fft {i}")
+        for _ in range(n_peaks):
+            peaks = set()
+            peak_indices = []
+            highest = (0, 0)
+            highest_index = 0
+            for j in range(len(ffts[i][1])):
+                if ffts[i][1][j] > highest[1]:
+                    new = (ffts[i][0][j], ffts[i][0][j])
+                    if new in peaks:
+                        continue
+                    highest = new
+                    highest_index = j
+            if highest == (0, 0):
+                break
+            peaks.add(highest)
+            peak_indices.append(highest_index)
+        sig = np.zeros(time_vec.size)
+        print(sig.size)
+        for peak_i in peak_indices:
+            sig += ffts[i][1][peak_i] * np.sin(ffts[i][0][peak_i] * 2*np.pi * time_vec)
+        sig *= 1 / max(sig) # normalize
+        sig = sig.astype('float32') # convert to floats
+        chunks.append(sig)
+        ax.set(ylim=(0, max(sig)))
+        line1.set_ydata(sig)
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+        time_vec += 1024
+
+    print(len(chunks))
+    print(len(chunks[0]))
+    print(sum([len(chunks[i]) for i in range(len(chunks))]))
+    times = []
+    t = time.perf_counter()
+    for i, chunk in enumerate(chunks):
+        # print(f"playing chunk {i}")
+        stream.write(chunk)
+        print(time.perf_counter()-t)
+        t = time.perf_counter()
+
+    wf = wave.open(filename2, 'wb')
+    wf.setnchannels(CHANNELS)
+    wf.setsampwidth(p.get_sample_size(FORMAT))
+    wf.setframerate(RATE)
+    wf.writeframes(b''.join(chunks))
+    wf.close()
+
+recreate(ffts, 100)
+        
+        
+    
+    
     
 
 # for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):

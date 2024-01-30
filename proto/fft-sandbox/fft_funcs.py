@@ -20,7 +20,7 @@ def get_wave(freq, amp, time_vec=None, noise_weight=0, func=np.sin, angle=0):
     # freq is scaling the frequency
     # 2*np.pi*time_vec allows us to use Hz as frequency inputs 
     # 1Hz * 2pi * 1s -> takes 1 second for 1 cycle = 1Hz wave
-    return amp*(func(angle + freq*2*np.pi*time_vec) + noise_weight*np.random.randn(time_vec.size))
+    return ((1+np.sin(100*2*np.pi*time_vec))*.2+.9) * amp*(func(angle + freq*2*np.pi*time_vec) + noise_weight*np.random.randn(time_vec.size))
 
 # this is was stupid and unecessary... don't keep it later
 @dataclass
@@ -204,3 +204,11 @@ def time_of_fft(filename):
     t2 = time.perf_counter()
     print(f"time: {t2-t1}\tfreq: {1/(t2-t1)}")
 
+w = recreate_file_waveform("proto/fft-sandbox/audio/ahhh.wav", 100, 5)
+f = get_fft(w, time_vec_from_sig(w))
+print(f.sample_freq.size)
+plt.figure()
+plt.plot(time_vec_from_sig(w), w)
+plt.show()
+play_obj = sa.play_buffer(w, 1, 2, SAMPLE_RATE)
+play_obj.wait_done()

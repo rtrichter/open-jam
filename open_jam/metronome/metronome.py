@@ -1,6 +1,7 @@
 from config import *
 
 # play wave file (audio package)
+# audio player needs to run in a thread to avoid blocking
 
 # schedule clicks
 
